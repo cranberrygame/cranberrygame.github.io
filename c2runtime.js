@@ -17885,15 +17885,811 @@ cr.plugins_.Touch = function(runtime)
 	};
 	pluginProto.exps = new Exps();
 }());
+;
+;
+cr.plugins_.WebStorage = function(runtime)
+{
+	this.runtime = runtime;
+};
+(function()
+{
+	var pluginProto = cr.plugins_.WebStorage.prototype;
+	pluginProto.Type = function(plugin)
+	{
+		this.plugin = plugin;
+		this.runtime = plugin.runtime;
+	};
+	var typeProto = pluginProto.Type.prototype;
+	typeProto.onCreate = function()
+	{
+	};
+	pluginProto.Instance = function(type)
+	{
+		this.type = type;
+		this.runtime = type.runtime;
+	};
+	var instanceProto = pluginProto.Instance.prototype;
+	var prefix = "";
+	var is_arcade = (typeof window["is_scirra_arcade"] !== "undefined");
+	if (is_arcade)
+		prefix = "arcade" + window["scirra_arcade_id"];
+	instanceProto.onCreate = function()
+	{
+		if (typeof localStorage === "undefined")
+		{
+			cr.logexport("[Construct 2] Webstorage plugin: local storage is not supported on this platform.");
+		}
+		if (typeof sessionStorage === "undefined")
+		{
+			cr.logexport("[Construct 2] Webstorage plugin: session storage is not supported on this platform.");
+		}
+	};
+	function Cnds() {};
+	Cnds.prototype.LocalStorageEnabled = function()
+	{
+		return true;
+	};
+	Cnds.prototype.SessionStorageEnabled = function()
+	{
+		return true;
+	};
+	Cnds.prototype.LocalStorageExists = function(key)
+	{
+		if (typeof localStorage === "undefined")
+			return false;
+		return localStorage.getItem(prefix + key) != null;
+	};
+	Cnds.prototype.SessionStorageExists = function(key)
+	{
+		if (typeof sessionStorage === "undefined")
+			return false;
+		return sessionStorage.getItem(prefix + key) != null;
+	};
+	Cnds.prototype.OnQuotaExceeded = function ()
+	{
+		return true;
+	};
+	Cnds.prototype.CompareKeyText = function (key, text_to_compare, case_sensitive)
+	{
+		if (typeof localStorage === "undefined")
+			return false;
+		var value = localStorage.getItem(prefix + key) || "";
+		if (case_sensitive)
+			return value == text_to_compare;
+		else
+			return cr.equals_nocase(value, text_to_compare);
+	};
+	Cnds.prototype.CompareKeyNumber = function (key, cmp, x)
+	{
+		if (typeof localStorage === "undefined")
+			return false;
+		var value = localStorage.getItem(prefix + key) || "";
+		return cr.do_cmp(parseFloat(value), cmp, x);
+	};
+	pluginProto.cnds = new Cnds();
+	function Acts() {};
+	Acts.prototype.StoreLocal = function(key, data)
+	{
+		if (typeof localStorage === "undefined")
+			return;
+		try {
+			localStorage.setItem(prefix + key, data);
+		}
+		catch (e)
+		{
+			this.runtime.trigger(cr.plugins_.WebStorage.prototype.cnds.OnQuotaExceeded, this);
+		}
+	};
+	Acts.prototype.StoreSession = function(key,data)
+	{
+		if (typeof sessionStorage === "undefined")
+			return;
+		try {
+			sessionStorage.setItem(prefix + key, data);
+		}
+		catch (e)
+		{
+			this.runtime.trigger(cr.plugins_.WebStorage.prototype.cnds.OnQuotaExceeded, this);
+		}
+	};
+	Acts.prototype.RemoveLocal = function(key)
+	{
+		if (typeof localStorage === "undefined")
+			return;
+		localStorage.removeItem(prefix + key);
+	};
+	Acts.prototype.RemoveSession = function(key)
+	{
+		if (typeof sessionStorage === "undefined")
+			return;
+		sessionStorage.removeItem(prefix + key);
+	};
+	Acts.prototype.ClearLocal = function()
+	{
+		if (typeof localStorage === "undefined")
+			return;
+		if (!is_arcade)
+			localStorage.clear();
+	};
+	Acts.prototype.ClearSession = function()
+	{
+		if (typeof sessionStorage === "undefined")
+			return;
+		if (!is_arcade)
+			sessionStorage.clear();
+	};
+	Acts.prototype.JSONLoad = function (json_, mode_)
+	{
+		if (typeof localStorage === "undefined")
+			return;
+		var d;
+		try {
+			d = JSON.parse(json_);
+		}
+		catch(e) { return; }
+		if (!d["c2dictionary"])			// presumably not a c2dictionary object
+			return;
+		var o = d["data"];
+		if (mode_ === 0 && !is_arcade)	// 'set' mode: must clear webstorage first
+			localStorage.clear();
+		var p;
+		for (p in o)
+		{
+			if (o.hasOwnProperty(p))
+			{
+				try {
+					localStorage.setItem(prefix + p, o[p]);
+				}
+				catch (e)
+				{
+					this.runtime.trigger(cr.plugins_.WebStorage.prototype.cnds.OnQuotaExceeded, this);
+					return;
+				}
+			}
+		}
+	};
+	pluginProto.acts = new Acts();
+	function Exps() {};
+	Exps.prototype.LocalValue = function(ret,key)
+	{
+		if (typeof localStorage === "undefined")
+		{
+			ret.set_string("");
+			return;
+		}
+		ret.set_string(localStorage.getItem(prefix + key) || "");
+	};
+	Exps.prototype.SessionValue = function(ret,key)
+	{
+		if (typeof sessionStorage === "undefined")
+		{
+			ret.set_string("");
+			return;
+		}
+		ret.set_string(sessionStorage.getItem(prefix + key) || "");
+	};
+	Exps.prototype.LocalCount = function(ret)
+	{
+		if (typeof localStorage === "undefined")
+		{
+			ret.set_int(0);
+			return;
+		}
+		ret.set_int(is_arcade ? 0 : localStorage.length);
+	};
+	Exps.prototype.SessionCount = function(ret)
+	{
+		if (typeof sessionStorage === "undefined")
+		{
+			ret.set_int(0);
+			return;
+		}
+		ret.set_int(is_arcade ? 0 : sessionStorage.length);
+	};
+	Exps.prototype.LocalAt = function(ret,n)
+	{
+		if (is_arcade || typeof localStorage === "undefined")
+			ret.set_string("");
+		else
+			ret.set_string(localStorage.getItem(localStorage.key(n)) || "");
+	};
+	Exps.prototype.SessionAt = function(ret,n)
+	{
+		if (is_arcade || typeof sessionStorage === "undefined")
+			ret.set_string("");
+		else
+			ret.set_string(sessionStorage.getItem(sessionStorage.key(n)) || "");
+	};
+	Exps.prototype.LocalKeyAt = function(ret,n)
+	{
+		if (is_arcade || typeof localStorage === "undefined")
+			ret.set_string("");
+		else
+			ret.set_string(localStorage.key(n) || "");
+	};
+	Exps.prototype.SessionKeyAt = function(ret,n)
+	{
+		if (is_arcade || typeof sessionStorage === "undefined")
+			ret.set_string("");
+		else
+			ret.set_string(sessionStorage.key(n) || "");
+	};
+	Exps.prototype.AsJSON = function (ret)
+	{
+		if (typeof localStorage === "undefined")
+		{
+			ret.set_string("");
+			return;
+		}
+		var o = {}, i, len, k;
+		for (i = 0, len = localStorage.length; i < len; i++)
+		{
+			k = localStorage.key(i);
+			if (is_arcade)
+			{
+				if (k.substr(0, prefix.length) === prefix)
+				{
+					o[k.substr(prefix.length)] = localStorage.getItem(k);
+				}
+			}
+			else
+				o[k] = localStorage.getItem(k);
+		}
+		ret.set_string(JSON.stringify({
+			"c2dictionary": true,
+			"data": o
+		}));
+	};
+	pluginProto.exps = new Exps();
+}());
+;
+;
+/*
+cr.plugins_.cranberrygame_Mixpanel = function(runtime)
+{
+	this.runtime = runtime;
+	Type
+		onCreate
+	Instance
+		onCreate
+		draw
+		drawGL
+	cnds
+	acts
+	exps
+};
+*/
+cr.plugins_.cranberrygame_Mixpanel = function(runtime)
+{
+	this.runtime = runtime;
+};
+(function ()
+{
+	var pluginProto = cr.plugins_.cranberrygame_Mixpanel.prototype;
+	pluginProto.Type = function(plugin)
+	{
+		this.plugin = plugin;
+		this.runtime = plugin.runtime;
+	};
+	var typeProto = pluginProto.Type.prototype;
+/*
+	var fbAppID = "";
+	var fbAppSecret = "";
+*/
+	var token = '';
+	var eventProperties = {};
+	var peopleProperties = {};
+	typeProto.onCreate = function()
+	{
+/*
+		var newScriptTag=document.createElement('script');
+		newScriptTag.setAttribute("type","text/javascript");
+		newScriptTag.setAttribute("src", "mylib.js");
+		document.getElementsByTagName("head")[0].appendChild(newScriptTag);
+		var scripts=document.getElementsByTagName("script");
+		var scriptExist=false;
+		for(var i=0;i<scripts.length;i++){
+			if(scripts[i].src.indexOf("cordova.js")!=-1||scripts[i].src.indexOf("phonegap.js")!=-1){
+				scriptExist=true;
+				break;
+			}
+		}
+		if(!scriptExist){
+			var newScriptTag=document.createElement("script");
+			newScriptTag.setAttribute("type","text/javascript");
+			newScriptTag.setAttribute("src", "cordova.js");
+			document.getElementsByTagName("head")[0].appendChild(newScriptTag);
+		}
+*/
+		if(this.runtime.isBlackberry10 || this.runtime.isWindows8App || this.runtime.isWindowsPhone8 || this.runtime.isWindowsPhone81){
+			var scripts=document.getElementsByTagName("script");
+			var scriptExist=false;
+			for(var i=0;i<scripts.length;i++){
+				if(scripts[i].src.indexOf("cordova.js")!=-1||scripts[i].src.indexOf("phonegap.js")!=-1){
+					scriptExist=true;
+					break;
+				}
+			}
+			if(!scriptExist){
+				var newScriptTag=document.createElement("script");
+				newScriptTag.setAttribute("type","text/javascript");
+				newScriptTag.setAttribute("src", "cordova.js");
+				document.getElementsByTagName("head")[0].appendChild(newScriptTag);
+			}
+		}
+	};
+	pluginProto.Instance = function(type)
+	{
+		this.type = type;
+		this.runtime = type.runtime;
+	};
+	var instanceProto = pluginProto.Instance.prototype;
+	instanceProto.onCreate = function()
+	{
+/*
+		this.arr = [];
+		this.forX = 0;
+		var self = this;
+		window.addEventListener("resize", function () {//cranberrygame
+			self.runtime.trigger(cr.plugins_.cranberrygame_Mixpanel.prototype.cnds.TriggerCondition, self);
+		});
+*/
+		token = this.properties[0];
+		if (this.runtime.isAndroid || this.runtime.isiOS) {
+			if (typeof window["mixpanel"] == 'undefined')
+				return;
+			window["mixpanel"]['init'](token, function(result){}, function(error){});
+		}
+		else {
+(function(f,b){if(!b.__SV){var a,e,i,g;window.mixpanel=b;b._i=[];b.init=function(a,e,d){function f(b,h){var a=h.split(".");2==a.length&&(b=b[a[0]],h=a[1]);b[h]=function(){b.push([h].concat(Array.prototype.slice.call(arguments,0)))}}var c=b;"undefined"!==typeof d?c=b[d]=[]:d="mixpanel";c.people=c.people||[];c.toString=function(b){var a="mixpanel";"mixpanel"!==d&&(a+="."+d);b||(a+=" (stub)");return a};c.people.toString=function(){return c.toString(1)+".people (stub)"};i="disable track track_pageview track_links track_forms register register_once alias unregister identify name_tag set_config people.set people.set_once people.increment people.append people.union people.track_charge people.clear_charges people.delete_user".split(" ");
+for(g=0;g<i.length;g++)f(c,i[g]);b._i.push([a,e,d])};b.__SV=1.2;a=f.createElement("script");a.type="text/javascript";a.async=!0;a.src="undefined"!==typeof MIXPANEL_CUSTOM_LIB_URL?MIXPANEL_CUSTOM_LIB_URL:"//cdn.mxpnl.com/libs/mixpanel-2-latest.min.js";e=f.getElementsByTagName("script")[0];e.parentNode.insertBefore(a,e)}})(document,window.mixpanel||[]);
+window["mixpanel"]['init'](token);
+		}
+	};
+	instanceProto.draw = function(ctx)
+	{
+	};
+	instanceProto.drawGL = function (glw)
+	{
+	};
+/*
+	instanceProto.at = function (x)
+	{
+		return this.arr[x];
+	};
+	instanceProto.set = function (x, val)
+	{
+		this.arr[x] = val;
+	};
+	instanceProto.doForEachTrigger = function (current_event)
+	{
+		this.runtime.pushCopySol(current_event.solModifiers);
+		current_event.retrigger();
+		this.runtime.popSol(current_event.solModifiers);
+	};
+*/
+	function Cnds() {};
+/*
+	Cnds.prototype.MyCondition = function (myparam)
+	{
+		return myparam >= 0;
+	};
+	Cnds.prototype.TriggerCondition = function ()
+	{
+		return true;
+	};
+	Cnds.prototype.ArrForEach = function ()
+	{
+        var current_event = this.runtime.getCurrentEventStack().current_event;
+		this.forX = 0;
+		for (this.forX = 0; this.forX < this.arr.length; this.forX++)
+		{
+			this.doForEachTrigger(current_event);
+		}
+		this.forX = 0;
+		return false;
+	};
+*/
+	pluginProto.cnds = new Cnds();
+	function Acts() {};
+/*
+	Acts.prototype.MyAction = function (myparam)
+	{
+		if (!(this.runtime.isAndroid || this.runtime.isBlackberry10 || this.runtime.isiOS || this.runtime.isWindows8App || this.runtime.isWindowsPhone8 || this.runtime.isWindowsPhone81))
+			return;
+        if (typeof navigator["camera"] == 'undefined')
+            return;
+		alert(myparam);
+	};
+	Acts.prototype.TriggerAction = function ()
+	{
+		if (!(this.runtime.isAndroid || this.runtime.isBlackberry10 || this.runtime.isiOS || this.runtime.isWindows8App || this.runtime.isWindowsPhone8 || this.runtime.isWindowsPhone81))
+			return;
+        if (typeof navigator["camera"] == 'undefined')
+            return;
+		var self = this;
+		self.runtime.trigger(cr.plugins_.cranberrygame_Mixpanel.prototype.cnds.TriggerCondition, self);
+	};
+	Acts.prototype.Open = function (URL, locationBar)
+	{
+		if (!(this.runtime.isAndroid || this.runtime.isBlackberry10 || this.runtime.isiOS || this.runtime.isWindows8App || this.runtime.isWindowsPhone8 || this.runtime.isWindowsPhone81))
+			return;
+        if (typeof navigator["camera"] == 'undefined')
+            return;
+	};
+*/
+	Acts.prototype.TrackEvent = function (eventName)
+	{
+		if (typeof window["mixpanel"] == 'undefined')
+			return;
+		if (this.runtime.isAndroid || this.runtime.isiOS) {
+			window["mixpanel"]['track'](eventName, eventProperties, function(result){}, function(error){});
+		}
+		else {
+			window["mixpanel"]['track'](eventName, eventProperties);
+		}
+		eventProperties	= {};
+	};
+	Acts.prototype.AddEventProperty = function (propertyName, propertyValue)
+	{
+		if (propertyName && propertyValue)
+			eventProperties[propertyName] = propertyValue;
+	}
+	Acts.prototype.IdentifyPeople = function (distinctId)
+	{
+		if (typeof window["mixpanel"] == 'undefined')
+			return;
+		if (this.runtime.isAndroid || this.runtime.isiOS) {
+			window["mixpanel"]["identify"](distinctId, function(result){}, function(error){});
+		}
+		else {
+			window["mixpanel"]["identify"](distinctId);
+		}
+	}
+	Acts.prototype.AddPeopleProperty = function (propertyName, propertyValue)
+	{
+		if (propertyName && propertyValue)
+			peopleProperties[propertyName] = propertyValue;
+	}
+	Acts.prototype.ChangePeopleProperties = function ()
+	{
+		if (typeof window["mixpanel"] == 'undefined')
+			return;
+		if (this.runtime.isAndroid || this.runtime.isiOS) {
+			window["mixpanel"]["set"](peopleProperties, function(result){}, function(error){});
+		}
+		else {
+			window["mixpanel"]["people"]["set"](peopleProperties);
+		}
+		peopleProperties = {};
+	}
+	Acts.prototype.IncrementPeopleProperty = function (propertyName, propertyValue)
+	{
+		if (typeof window["mixpanel"] == 'undefined')
+			return;
+		if (this.runtime.isAndroid || this.runtime.isiOS) {
+			window["mixpanel"]["increment"](propertyName, propertyValue, function(result){}, function(error){});
+		}
+		else {
+			window["mixpanel"]["people"]["increment"](propertyName, propertyValue);
+		}
+	}
+	Acts.prototype.DeletePeople = function ()
+	{
+		if (typeof window["mixpanel"] == 'undefined')
+			return;
+		if (this.runtime.isAndroid || this.runtime.isiOS) {
+			window["mixpanel"]["deleteUser"](function(result){}, function(error){});
+		}
+		else {
+			window["mixpanel"]["people"]["delete_user"]();
+		}
+	}
+	pluginProto.acts = new Acts();
+	function Exps() {};
+/*
+	Exps.prototype.CellXCount = function (ret)	// 'ret' must always be the first parameter - always return the expression's result through it!
+	{
+		ret.set_int(1337);				// return our value
+	};
+	Exps.prototype.Text = function (ret, param) //cranberrygame
+	{
+		ret.set_string("Hello");		// for ef_return_string
+	};
+	Exps.prototype.CurValue = function (ret)
+	{
+		ret.set_any(this.at(this.forX));
+	};
+	Exps.prototype.At = function (ret, x_)
+	{
+		ret.set_any(this.at(x));
+	};
+	Exps.prototype.Width = function (ret)
+	{
+		ret.set_int(this.cx);
+	};
+*/
+	pluginProto.exps = new Exps();
+}());
+;
+;
+/*
+cr.plugins_.cranberrygame_Referrer = function(runtime)
+{
+	this.runtime = runtime;
+	Type
+		onCreate
+	Instance
+		onCreate
+		draw
+		drawGL
+	cnds
+	acts
+	exps
+};
+*/
+cr.plugins_.cranberrygame_Referrer = function(runtime)
+{
+	this.runtime = runtime;
+};
+(function ()
+{
+	var pluginProto = cr.plugins_.cranberrygame_Referrer.prototype;
+	pluginProto.Type = function(plugin)
+	{
+		this.plugin = plugin;
+		this.runtime = plugin.runtime;
+	};
+	var typeProto = pluginProto.Type.prototype;
+/*
+	var fbAppID = "";
+	var fbAppSecret = "";
+*/
+	var referrer = '';
+	var errorMessage = '';
+	typeProto.onCreate = function()
+	{
+/*
+		var newScriptTag=document.createElement('script');
+		newScriptTag.setAttribute("type","text/javascript");
+		newScriptTag.setAttribute("src", "mylib.js");
+		document.getElementsByTagName("head")[0].appendChild(newScriptTag);
+		var scripts=document.getElementsByTagName("script");
+		var scriptExist=false;
+		for(var i=0;i<scripts.length;i++){
+			if(scripts[i].src.indexOf("cordova.js")!=-1||scripts[i].src.indexOf("phonegap.js")!=-1){
+				scriptExist=true;
+				break;
+			}
+		}
+		if(!scriptExist){
+			var newScriptTag=document.createElement("script");
+			newScriptTag.setAttribute("type","text/javascript");
+			newScriptTag.setAttribute("src", "cordova.js");
+			document.getElementsByTagName("head")[0].appendChild(newScriptTag);
+		}
+*/
+		if(this.runtime.isBlackberry10 || this.runtime.isWindows8App || this.runtime.isWindowsPhone8 || this.runtime.isWindowsPhone81){
+			var scripts=document.getElementsByTagName("script");
+			var scriptExist=false;
+			for(var i=0;i<scripts.length;i++){
+				if(scripts[i].src.indexOf("cordova.js")!=-1||scripts[i].src.indexOf("phonegap.js")!=-1){
+					scriptExist=true;
+					break;
+				}
+			}
+			if(!scriptExist){
+				var newScriptTag=document.createElement("script");
+				newScriptTag.setAttribute("type","text/javascript");
+				newScriptTag.setAttribute("src", "cordova.js");
+				document.getElementsByTagName("head")[0].appendChild(newScriptTag);
+			}
+		}
+	};
+	pluginProto.Instance = function(type)
+	{
+		this.type = type;
+		this.runtime = type.runtime;
+	};
+	var instanceProto = pluginProto.Instance.prototype;
+	instanceProto.onCreate = function()
+	{
+/*
+		this.arr = [];
+		this.forX = 0;
+		var self = this;
+		window.addEventListener("resize", function () {//cranberrygame
+			self.runtime.trigger(cr.plugins_.cranberrygame_Referrer.prototype.cnds.TriggerCondition, self);
+		});
+*/
+	};
+	instanceProto.draw = function(ctx)
+	{
+	};
+	instanceProto.drawGL = function (glw)
+	{
+	};
+/*
+	instanceProto.at = function (x)
+	{
+		return this.arr[x];
+	};
+	instanceProto.set = function (x, val)
+	{
+		this.arr[x] = val;
+	};
+	instanceProto.doForEachTrigger = function (current_event)
+	{
+		this.runtime.pushCopySol(current_event.solModifiers);
+		current_event.retrigger();
+		this.runtime.popSol(current_event.solModifiers);
+	};
+*/
+	function Cnds() {};
+/*
+	Cnds.prototype.MyCondition = function (myparam)
+	{
+		return myparam >= 0;
+	};
+	Cnds.prototype.TriggerCondition = function ()
+	{
+		return true;
+	};
+	Cnds.prototype.ArrForEach = function ()
+	{
+        var current_event = this.runtime.getCurrentEventStack().current_event;
+		this.forX = 0;
+		for (this.forX = 0; this.forX < this.arr.length; this.forX++)
+		{
+			this.doForEachTrigger(current_event);
+		}
+		this.forX = 0;
+		return false;
+	};
+*/
+	Cnds.prototype.OnCheckReferrerSucceeded = function ()
+	{
+		return true;
+	};
+	Cnds.prototype.OnCheckReferrerFailed = function ()
+	{
+		return true;
+	};
+	pluginProto.cnds = new Cnds();
+	function Acts() {};
+/*
+	Acts.prototype.MyAction = function (myparam)
+	{
+		if (!(this.runtime.isAndroid || this.runtime.isBlackberry10 || this.runtime.isiOS || this.runtime.isWindows8App || this.runtime.isWindowsPhone8 || this.runtime.isWindowsPhone81))
+			return;
+        if (typeof navigator["camera"] == 'undefined')
+            return;
+		alert(myparam);
+	};
+	Acts.prototype.TriggerAction = function ()
+	{
+		if (!(this.runtime.isAndroid || this.runtime.isBlackberry10 || this.runtime.isiOS || this.runtime.isWindows8App || this.runtime.isWindowsPhone8 || this.runtime.isWindowsPhone81))
+			return;
+        if (typeof navigator["camera"] == 'undefined')
+            return;
+		var self = this;
+		self.runtime.trigger(cr.plugins_.cranberrygame_Referrer.prototype.cnds.TriggerCondition, self);
+	};
+	Acts.prototype.Open = function (URL, locationBar)
+	{
+		if (!(this.runtime.isAndroid || this.runtime.isBlackberry10 || this.runtime.isiOS || this.runtime.isWindows8App || this.runtime.isWindowsPhone8 || this.runtime.isWindowsPhone81))
+			return;
+        if (typeof navigator["camera"] == 'undefined')
+            return;
+	};
+*/
+	function getReferrer(paramname)
+	{
+		var match = RegExp('[?&]' + paramname + '=([^&]*)').exec(window.location.search);
+		if (match)
+			return decodeURIComponent(match[1].replace(/\+/g, ' '));
+		else
+			return "";
+	};
+	Acts.prototype.CheckReferrer = function ()
+	{
+		var self = this;
+		if (this.runtime.isAndroid) {
+			if (typeof window['applicationPreferences'] == 'undefined')
+				return;
+			window['applicationPreferences']['get']("referrer", function(value) {
+				referrer = value;
+				self.runtime.trigger(cr.plugins_.cranberrygame_Referrer.prototype.cnds.OnCheckReferrerSucceeded, self);
+			},
+			function(error) {
+				errorMessage = error.message;
+				self.runtime.trigger(cr.plugins_.cranberrygame_Referrer.prototype.cnds.OnCheckReferrerFailed, self);
+			});
+		}
+		else if (this.runtime.isBlackberry10 || this.runtime.isiOS || this.runtime.isWindows8App || this.runtime.isWindowsPhone8 || this.runtime.isWindowsPhone81) {
+				errorMessage = 'Only supported on android and html5website';
+				self.runtime.trigger(cr.plugins_.cranberrygame_Referrer.prototype.cnds.OnCheckReferrerFailed, self);
+		}
+		else {
+			referrer = getReferrer("referrer");
+			if (referrer) {
+				self.runtime.trigger(cr.plugins_.cranberrygame_Referrer.prototype.cnds.OnCheckReferrerSucceeded, self);
+			}
+			else {
+				errorMessage = 'No referrer';
+				self.runtime.trigger(cr.plugins_.cranberrygame_Referrer.prototype.cnds.OnCheckReferrerFailed, self);
+			}
+		}
+	};
+	pluginProto.acts = new Acts();
+	function Exps() {};
+/*
+	Exps.prototype.CellXCount = function (ret)	// 'ret' must always be the first parameter - always return the expression's result through it!
+	{
+		ret.set_int(1337);				// return our value
+	};
+	Exps.prototype.Text = function (ret, param) //cranberrygame
+	{
+		ret.set_string("Hello");		// for ef_return_string
+	};
+	Exps.prototype.CurValue = function (ret)
+	{
+		ret.set_any(this.at(this.forX));
+	};
+	Exps.prototype.At = function (ret, x_)
+	{
+		ret.set_any(this.at(x));
+	};
+	Exps.prototype.Width = function (ret)
+	{
+		ret.set_int(this.cx);
+	};
+*/
+	Exps.prototype.Referrer = function (ret)	// 'ret' must always be the first parameter - always return the expression's result through it!
+	{
+		ret.set_string(referrer);		// for ef_return_string
+	};
+	Exps.prototype.ReferrerSubParameter = function (ret, param) //cranberrygame
+	{
+		var result = "";
+		var arr = referrer.split("&");
+		for (var i=0; i < arr.length; i++) {
+			var subParameters = arr[i].split("=");
+			if (subParameters.length > 1) {
+				if (subParameters[0] == param) {
+					result = subParameters[1];
+					break;
+				}
+			}
+		}
+		ret.set_string(result);		// for ef_return_string
+	};
+	pluginProto.exps = new Exps();
+}());
 cr.getObjectRefTable = function () { return [
 	cr.plugins_.Browser,
+	cr.plugins_.cranberrygame_Mixpanel,
+	cr.plugins_.cranberrygame_Referrer,
 	cr.plugins_.Mouse,
 	cr.plugins_.Sprite,
 	cr.plugins_.Text,
 	cr.plugins_.Touch,
+	cr.plugins_.WebStorage,
 	cr.system_object.prototype.cnds.IsGroupActive,
 	cr.plugins_.Touch.prototype.cnds.OnTapGestureObject,
 	cr.plugins_.Browser.prototype.acts.GoToURLWindow,
 	cr.plugins_.Mouse.prototype.cnds.IsOverObject,
-	cr.plugins_.Mouse.prototype.acts.SetCursor
+	cr.plugins_.Mouse.prototype.acts.SetCursor,
+	cr.system_object.prototype.cnds.OnLayoutStart,
+	cr.plugins_.WebStorage.prototype.cnds.LocalStorageExists,
+	cr.plugins_.WebStorage.prototype.cnds.CompareKeyText,
+	cr.system_object.prototype.cnds.Else,
+	cr.plugins_.cranberrygame_Referrer.prototype.acts.CheckReferrer,
+	cr.plugins_.WebStorage.prototype.acts.StoreLocal,
+	cr.plugins_.cranberrygame_Referrer.prototype.cnds.OnCheckReferrerSucceeded,
+	cr.plugins_.cranberrygame_Referrer.prototype.cnds.OnCheckReferrerFailed,
+	cr.plugins_.cranberrygame_Mixpanel.prototype.acts.AddEventProperty,
+	cr.plugins_.cranberrygame_Referrer.prototype.exps.Referrer,
+	cr.plugins_.cranberrygame_Referrer.prototype.exps.ReferrerSubParameter,
+	cr.plugins_.cranberrygame_Mixpanel.prototype.acts.TrackEvent
 ];};

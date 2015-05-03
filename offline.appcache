@@ -1,5 +1,5 @@
 ﻿CACHE MANIFEST
-#1430633875
+#1430635657
 data.js
 c2runtime.js
 jquery-2.1.1.min.js
@@ -14,6 +14,9 @@ images/platformandroid-sheet0.png
 images/platformios-sheet0.png
 images/cordovarevmob-sheet0.png
 images/cordovachartboost-sheet0.png
+images/youtubelink-sheet0.png
+images/apklink-sheet0.png
+images/cordovapluginfreelicense-sheet0.png
 icon-16.png
 icon-32.png
 icon-114.png
