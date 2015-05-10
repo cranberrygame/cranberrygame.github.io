@@ -18672,9 +18672,9 @@ cr.getObjectRefTable = function () { return [
 	cr.plugins_.cranberrygame_Referrer,
 	cr.plugins_.Mouse,
 	cr.plugins_.Sprite,
+	cr.plugins_.Touch,
 	cr.plugins_.Text,
 	cr.plugins_.WebStorage,
-	cr.plugins_.Touch,
 	cr.system_object.prototype.cnds.IsGroupActive,
 	cr.plugins_.Touch.prototype.cnds.OnTapGestureObject,
 	cr.plugins_.cranberrygame_Mixpanel.prototype.acts.AddEventProperty,
@@ -18691,5 +18691,6 @@ cr.getObjectRefTable = function () { return [
 	cr.plugins_.cranberrygame_Referrer.prototype.cnds.OnCheckReferrerSucceeded,
 	cr.plugins_.cranberrygame_Referrer.prototype.cnds.OnCheckReferrerFailed,
 	cr.plugins_.cranberrygame_Referrer.prototype.exps.Referrer,
-	cr.plugins_.cranberrygame_Referrer.prototype.exps.ReferrerSubParameter
+	cr.plugins_.cranberrygame_Referrer.prototype.exps.ReferrerSubParameter,
+	cr.system_object.prototype.acts.GoToLayout
 ];};
