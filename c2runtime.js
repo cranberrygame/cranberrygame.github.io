@@ -18668,11 +18668,11 @@ cr.plugins_.cranberrygame_Referrer = function(runtime)
 }());
 cr.getObjectRefTable = function () { return [
 	cr.plugins_.Browser,
-	cr.plugins_.cranberrygame_Mixpanel,
 	cr.plugins_.cranberrygame_Referrer,
+	cr.plugins_.cranberrygame_Mixpanel,
+	cr.plugins_.Sprite,
 	cr.plugins_.Mouse,
 	cr.plugins_.Text,
-	cr.plugins_.Sprite,
 	cr.plugins_.Touch,
 	cr.plugins_.WebStorage,
 	cr.system_object.prototype.cnds.IsGroupActive,
