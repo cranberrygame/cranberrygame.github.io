@@ -18238,7 +18238,7 @@ cr.plugins_.cranberrygame_Mixpanel = function(runtime)
 		if (this.runtime.isAndroid || this.runtime.isiOS) {
 			if (typeof window["mixpanel"] == 'undefined')
 				return;
-			window["mixpanel"]['init'](token, function(result){}, function(error){});
+			window["mixpanel"]['setUp'](token);
 		}
 		else {
 (function(f,b){if(!b.__SV){var a,e,i,g;window.mixpanel=b;b._i=[];b.init=function(a,e,d){function f(b,h){var a=h.split(".");2==a.length&&(b=b[a[0]],h=a[1]);b[h]=function(){b.push([h].concat(Array.prototype.slice.call(arguments,0)))}}var c=b;"undefined"!==typeof d?c=b[d]=[]:d="mixpanel";c.people=c.people||[];c.toString=function(b){var a="mixpanel";"mixpanel"!==d&&(a+="."+d);b||(a+=" (stub)");return a};c.people.toString=function(){return c.toString(1)+".people (stub)"};i="disable track track_pageview track_links track_forms register register_once alias unregister identify name_tag set_config people.set people.set_once people.increment people.append people.union people.track_charge people.clear_charges people.delete_user".split(" ");
@@ -18323,24 +18323,31 @@ window["mixpanel"]['init'](token);
 		if (typeof window["mixpanel"] == 'undefined')
 			return;
 		if (this.runtime.isAndroid || this.runtime.isiOS) {
-			window["mixpanel"]['track'](eventName, eventProperties, function(result){}, function(error){});
+			window["mixpanel"]['trackEvent'](eventName, eventProperties);
 		}
 		else {
 			window["mixpanel"]['track'](eventName, eventProperties);
+			eventProperties	= {};
 		}
-		eventProperties	= {};
 	};
 	Acts.prototype.AddEventProperty = function (propertyName, propertyValue)
 	{
-		if (propertyName && propertyValue)
-			eventProperties[propertyName] = propertyValue;
+		if (typeof window["mixpanel"] == 'undefined')
+			return;
+		if (this.runtime.isAndroid || this.runtime.isiOS) {
+			window["mixpanel"]['addEventProperty'](propertyName, propertyValue);
+		}
+		else {
+			if (propertyName && propertyValue)
+				eventProperties[propertyName] = propertyValue;
+		}
 	}
 	Acts.prototype.IdentifyPeople = function (distinctId)
 	{
 		if (typeof window["mixpanel"] == 'undefined')
 			return;
 		if (this.runtime.isAndroid || this.runtime.isiOS) {
-			window["mixpanel"]["identify"](distinctId, function(result){}, function(error){});
+			window["mixpanel"]["identifyPeople"](distinctId);
 		}
 		else {
 			window["mixpanel"]["identify"](distinctId);
@@ -18348,15 +18355,22 @@ window["mixpanel"]['init'](token);
 	}
 	Acts.prototype.AddPeopleProperty = function (propertyName, propertyValue)
 	{
-		if (propertyName && propertyValue)
-			peopleProperties[propertyName] = propertyValue;
+		if (typeof window["mixpanel"] == 'undefined')
+			return;
+		if (this.runtime.isAndroid || this.runtime.isiOS) {
+			window["mixpanel"]['addPeopleProperty'](propertyName, propertyValue);
+		}
+		else {
+			if (propertyName && propertyValue)
+				peopleProperties[propertyName] = propertyValue;
+		}
 	}
 	Acts.prototype.ChangePeopleProperties = function ()
 	{
 		if (typeof window["mixpanel"] == 'undefined')
 			return;
 		if (this.runtime.isAndroid || this.runtime.isiOS) {
-			window["mixpanel"]["set"](peopleProperties, function(result){}, function(error){});
+			window["mixpanel"]["changePeopleProperties"]();
 		}
 		else {
 			window["mixpanel"]["people"]["set"](peopleProperties);
@@ -18368,7 +18382,7 @@ window["mixpanel"]['init'](token);
 		if (typeof window["mixpanel"] == 'undefined')
 			return;
 		if (this.runtime.isAndroid || this.runtime.isiOS) {
-			window["mixpanel"]["increment"](propertyName, propertyValue, function(result){}, function(error){});
+			window["mixpanel"]["incrementPeopleProperty"](propertyName, propertyValue);
 		}
 		else {
 			window["mixpanel"]["people"]["increment"](propertyName, propertyValue);
@@ -18379,7 +18393,7 @@ window["mixpanel"]['init'](token);
 		if (typeof window["mixpanel"] == 'undefined')
 			return;
 		if (this.runtime.isAndroid || this.runtime.isiOS) {
-			window["mixpanel"]["deleteUser"](function(result){}, function(error){});
+			window["mixpanel"]["deletePeople"]();
 		}
 		else {
 			window["mixpanel"]["people"]["delete_user"]();
@@ -18667,14 +18681,14 @@ cr.plugins_.cranberrygame_Referrer = function(runtime)
 	pluginProto.exps = new Exps();
 }());
 cr.getObjectRefTable = function () { return [
-	cr.plugins_.cranberrygame_Referrer,
-	cr.plugins_.Text,
-	cr.plugins_.Mouse,
-	cr.plugins_.Sprite,
-	cr.plugins_.Touch,
-	cr.plugins_.WebStorage,
 	cr.plugins_.Browser,
 	cr.plugins_.cranberrygame_Mixpanel,
+	cr.plugins_.cranberrygame_Referrer,
+	cr.plugins_.Text,
+	cr.plugins_.Sprite,
+	cr.plugins_.Mouse,
+	cr.plugins_.Touch,
+	cr.plugins_.WebStorage,
 	cr.system_object.prototype.cnds.IsGroupActive,
 	cr.plugins_.Touch.prototype.cnds.OnTapGestureObject,
 	cr.plugins_.cranberrygame_Mixpanel.prototype.acts.AddEventProperty,
