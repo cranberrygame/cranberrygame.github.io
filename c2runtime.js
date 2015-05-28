@@ -18323,7 +18323,7 @@ window["mixpanel"]['init'](token);
 		if (typeof window["mixpanel"] == 'undefined')
 			return;
 		if (this.runtime.isAndroid || this.runtime.isiOS) {
-			window["mixpanel"]['trackEvent'](eventName, eventProperties);
+			window["mixpanel"]['trackEvent'](eventName);
 		}
 		else {
 			window["mixpanel"]['track'](eventName, eventProperties);
@@ -18685,9 +18685,9 @@ cr.getObjectRefTable = function () { return [
 	cr.plugins_.cranberrygame_Mixpanel,
 	cr.plugins_.cranberrygame_Referrer,
 	cr.plugins_.Mouse,
+	cr.plugins_.Touch,
 	cr.plugins_.Sprite,
 	cr.plugins_.Text,
-	cr.plugins_.Touch,
 	cr.plugins_.WebStorage,
 	cr.system_object.prototype.cnds.IsGroupActive,
 	cr.plugins_.Touch.prototype.cnds.OnTapGestureObject,
