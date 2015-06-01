@@ -18681,14 +18681,14 @@ cr.plugins_.cranberrygame_Referrer = function(runtime)
 	pluginProto.exps = new Exps();
 }());
 cr.getObjectRefTable = function () { return [
+	cr.plugins_.Sprite,
+	cr.plugins_.Mouse,
+	cr.plugins_.Text,
+	cr.plugins_.Touch,
+	cr.plugins_.WebStorage,
 	cr.plugins_.Browser,
 	cr.plugins_.cranberrygame_Mixpanel,
 	cr.plugins_.cranberrygame_Referrer,
-	cr.plugins_.Mouse,
-	cr.plugins_.Sprite,
-	cr.plugins_.Touch,
-	cr.plugins_.Text,
-	cr.plugins_.WebStorage,
 	cr.system_object.prototype.cnds.IsGroupActive,
 	cr.plugins_.Touch.prototype.cnds.OnTapGestureObject,
 	cr.plugins_.cranberrygame_Mixpanel.prototype.acts.AddEventProperty,
