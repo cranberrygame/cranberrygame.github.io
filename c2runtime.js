@@ -364,12 +364,14 @@ if (typeof Object.getPrototypeOf !== "function")
 	};
 	Quad.prototype.contains_pt = function (x, y)
 	{
-		var v0x = this.trx - this.tlx;
-		var v0y = this.try_ - this.tly;
-		var v1x = this.brx - this.tlx;
-		var v1y = this.bry - this.tly;
-		var v2x = x - this.tlx;
-		var v2y = y - this.tly;
+		var tlx = this.tlx;
+		var tly = this.tly;
+		var v0x = this.trx - tlx;
+		var v0y = this.try_ - tly;
+		var v1x = this.brx - tlx;
+		var v1y = this.bry - tly;
+		var v2x = x - tlx;
+		var v2y = y - tly;
 		var dot00 = v0x * v0x + v0y * v0y
 		var dot01 = v0x * v1x + v0y * v1y
 		var dot02 = v0x * v2x + v0y * v2y
@@ -380,8 +382,8 @@ if (typeof Object.getPrototypeOf !== "function")
 		var v = (dot00 * dot12 - dot01 * dot02) * invDenom;
 		if ((u >= 0.0) && (v > 0.0) && (u + v < 1))
 			return true;
-		v0x = this.blx - this.tlx;
-		v0y = this.bly - this.tly;
+		v0x = this.blx - tlx;
+		v0y = this.bly - tly;
 		var dot00 = v0x * v0x + v0y * v0y
 		var dot01 = v0x * v1x + v0y * v1y
 		var dot02 = v0x * v2x + v0y * v2y
@@ -512,13 +514,21 @@ if (typeof Object.getPrototypeOf !== "function")
 			return;							// index out of bounds
 		for (i = index, len = arr.length - 1; i < len; i++)
 			arr[i] = arr[i + 1];
-		arr.length = len;
+		cr.truncateArray(arr, len);
+	};
+	cr.truncateArray = function (arr, index)
+	{
+		arr.length = index;
+	};
+	cr.clearArray = function (arr)
+	{
+		cr.truncateArray(arr, 0);
 	};
 	cr.shallowAssignArray = function (dest, src)
 	{
-		dest.length = src.length;
+		cr.clearArray(dest);
 		var i, len;
-		for (i = 0, len = src.length; i < len; i++)
+		for (i = 0, len = src.length; i < len; ++i)
 			dest[i] = src[i];
 	};
 	cr.appendArray = function (a, b)
@@ -823,7 +833,7 @@ if (typeof Object.getPrototypeOf !== "function")
 				this.items = null;		// creates garbage; will lazy allocate on next add()
 			this.item_count = 0;
 		}
-		this.values_cache.length = 0;
+		cr.clearArray(this.values_cache);
 		this.cache_valid = true;
 	};
 	ObjectSet_.prototype.isEmpty = function ()
@@ -849,7 +859,7 @@ if (typeof Object.getPrototypeOf !== "function")
 			return;
 		if (supports_set)
 		{
-			this.values_cache.length = this.s["size"];
+			cr.clearArray(this.values_cache);
 			current_arr = this.values_cache;
 			current_index = 0;
 			this.s["forEach"](set_append_to_arr);
@@ -860,7 +870,7 @@ if (typeof Object.getPrototypeOf !== "function")
 		else
 		{
 			var values_cache = this.values_cache;
-			values_cache.length = this.item_count;
+			cr.clearArray(values_cache);
 			var p, n = 0, items = this.items;
 			if (items)
 			{
@@ -907,7 +917,7 @@ if (typeof Object.getPrototypeOf !== "function")
 			if (!s["has"](item))					// not an item to remove
 				arr[j++] = item;					// keep it
 		}
-		arr.length = j;
+		cr.truncateArray(arr, j);
 	};
 	cr.arrayRemoveAll_arr = function (arr, rem)
 	{
@@ -918,7 +928,7 @@ if (typeof Object.getPrototypeOf !== "function")
 			if (cr.fastIndexOf(rem, item) === -1)	// not an item to remove
 				arr[j++] = item;					// keep it
 		}
-		arr.length = j;
+		cr.truncateArray(arr, j);
 	};
 	function KahanAdder_()
 	{
@@ -1544,7 +1554,7 @@ if (typeof Object.getPrototypeOf !== "function")
 	};
 	RenderCell_.prototype.reset = function ()
 	{
-		this.objects.length = 0;
+		cr.clearArray(this.objects);
 		this.is_sorted = true;
 		this.pending_removal.clear();
 		this.any_pending_removal = false;
@@ -1772,23 +1782,26 @@ quat4.str=function(a){return"["+a[0]+", "+a[1]+", "+a[2]+", "+a[3]+"]"};
 		this.maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
 		this.lastSrcBlend = gl.ONE;
 		this.lastDestBlend = gl.ONE_MINUS_SRC_ALPHA;
+		this.vertexData = new Float32Array(MAX_VERTICES * 2);
+		this.texcoordData = new Float32Array(MAX_VERTICES * 2);
+		this.pointData = new Float32Array(MAX_POINTS * 4);
 		this.pointBuffer = gl.createBuffer();
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.pointBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, this.pointData.byteLength, gl.DYNAMIC_DRAW);
 		this.vertexBuffers = new Array(MULTI_BUFFERS);
 		this.texcoordBuffers = new Array(MULTI_BUFFERS);
 		for (i = 0; i < MULTI_BUFFERS; i++)
 		{
 			this.vertexBuffers[i] = gl.createBuffer();
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffers[i]);
+			gl.bufferData(gl.ARRAY_BUFFER, this.vertexData.byteLength, gl.DYNAMIC_DRAW);
 			this.texcoordBuffers[i] = gl.createBuffer();
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.texcoordBuffers[i]);
+			gl.bufferData(gl.ARRAY_BUFFER, this.texcoordData.byteLength, gl.DYNAMIC_DRAW);
 		}
 		this.curBuffer = 0;
 		this.indexBuffer = gl.createBuffer();
 		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
-		this.vertexData = new Float32Array(MAX_VERTICES * 2);
-		this.texcoordData = new Float32Array(MAX_VERTICES * 2);
-		this.pointData = new Float32Array(MAX_POINTS * 4);
 		var indexData = new Uint16Array(MAX_INDICES);
 		i = 0, len = MAX_INDICES;
 		var fv = 0;
@@ -2391,7 +2404,7 @@ quat4.str=function(a){return"["+a[0]+", "+a[1]+", "+a[2]+", "+a[3]+"]"};
 		if (this.pointPtr > 0)
 		{
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.pointBuffer);
-			gl.bufferData(gl.ARRAY_BUFFER, this.pointData.subarray(0, this.pointPtr), gl.STREAM_DRAW);
+			gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.pointData.subarray(0, this.pointPtr));
 			if (s && s.locAPos >= 0 && s.name === "<point>")
 				gl.vertexAttribPointer(s.locAPos, 4, gl.FLOAT, false, 0, 0);
 		}
@@ -2399,11 +2412,11 @@ quat4.str=function(a){return"["+a[0]+", "+a[1]+", "+a[2]+", "+a[3]+"]"};
 		{
 			var s = this.currentShader;
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffers[this.curBuffer]);
-			gl.bufferData(gl.ARRAY_BUFFER, this.vertexData.subarray(0, this.vertexPtr), gl.STREAM_DRAW);
+			gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.vertexData.subarray(0, this.vertexPtr));
 			if (s && s.locAPos >= 0 && s.name !== "<point>")
 				gl.vertexAttribPointer(s.locAPos, 2, gl.FLOAT, false, 0, 0);
 			gl.bindBuffer(gl.ARRAY_BUFFER, this.texcoordBuffers[this.curBuffer]);
-			gl.bufferData(gl.ARRAY_BUFFER, this.texcoordData.subarray(0, this.vertexPtr), gl.STREAM_DRAW);
+			gl.bufferSubData(gl.ARRAY_BUFFER, 0, this.texcoordData.subarray(0, this.vertexPtr));
 			if (s && s.locATex >= 0 && s.name !== "<point>")
 				gl.vertexAttribPointer(s.locATex, 2, gl.FLOAT, false, 0, 0);
 		}
@@ -3135,6 +3148,7 @@ quat4.str=function(a){return"["+a[0]+", "+a[1]+", "+a[2]+", "+a[3]+"]"};
 		this.canvasdiv = document.getElementById("c2canvasdiv");
 		this.gl = null;
 		this.glwrap = null;
+		this.glUnmaskedRenderer = "(unavailable)";
 		this.ctx = null;
 		this.fullscreenOldMarginCss = "";
 		this.firstInFullscreen = false;
@@ -3348,6 +3362,8 @@ quat4.str=function(a){return"["+a[0]+", "+a[1]+", "+a[2]+", "+a[3]+"]"};
 		var self = this;
 		var i, len, j, lenj, k, lenk, t, s, l, y;
 		this.isRetina = ((!this.isDomFree || this.isEjecta) && this.useHighDpi && !this.isAndroidStockBrowser);
+		if (this.fullscreen_mode === 0 && this.isiOS)
+			this.isRetina = false;
 		this.devicePixelRatio = (this.isRetina ? (window["devicePixelRatio"] || window["webkitDevicePixelRatio"] || window["mozDevicePixelRatio"] || window["msDevicePixelRatio"] || 1) : 1);
 		this.ClearDeathRow();
 		var attribs;
@@ -3370,6 +3386,18 @@ quat4.str=function(a){return"["+a[0]+", "+a[1]+", "+a[2]+", "+a[3]+"]"};
 		}
 		if (this.gl)
 		{
+			var debug_ext = this.gl.getExtension("WEBGL_debug_renderer_info");
+			if (debug_ext)
+			{
+				var unmasked_vendor = this.gl.getParameter(debug_ext.UNMASKED_VENDOR_WEBGL);
+				var unmasked_renderer = this.gl.getParameter(debug_ext.UNMASKED_RENDERER_WEBGL);
+				this.glUnmaskedRenderer = unmasked_renderer + " [" + unmasked_vendor + "]";
+;
+			}
+			else
+			{
+;
+			}
 			if (!this.isDomFree)
 			{
 				this.overlay_canvas = document.createElement("canvas");
@@ -3716,16 +3744,16 @@ quat4.str=function(a){return"["+a[0]+", "+a[1]+", "+a[2]+", "+a[3]+"]"};
 			}
 			else if (this.isRetina && !this.isDomFree)
 			{
-				jQuery(this.canvas).css({"width": Math.round(w) + "px",
-										"height": Math.round(h) + "px"});
+				this.canvas.style.width = Math.round(w) + "px";
+				this.canvas.style.height = Math.round(h) + "px";
 			}
 		}
 		if (this.overlay_canvas)
 		{
 			this.overlay_canvas.width = Math.round(w);
 			this.overlay_canvas.height = Math.round(h);
-			jQuery(this.overlay_canvas).css({"width": Math.round(w) + "px",
-											"height": Math.round(h) + "px"});
+			this.overlay_canvas.style.width = Math.round(w) + "px";
+			this.overlay_canvas.style.height = Math.round(h) + "px";
 		}
 		if (this.glwrap)
 		{
@@ -3867,6 +3895,7 @@ quat4.str=function(a){return"["+a[0]+", "+a[1]+", "+a[2]+", "+a[3]+"]"};
 		if (this.loaderstyle === 0)
 		{
 			this.loaderlogo = new Image();
+			this.loaderlogo.crossOrigin = "anonymous";
 			this.loaderlogo.src = "loading-logo.png";
 		}
 		this.next_uid = pm[21];
@@ -4184,6 +4213,7 @@ quat4.str=function(a){return"["+a[0]+", "+a[1]+", "+a[2]+", "+a[3]+"]"};
 			}
 			else
 			{
+				img_.crossOrigin = "anonymous";			// required for Arcade sandbox compatibility
 				img_.src = src_;
 			}
 		}
@@ -4482,6 +4512,8 @@ quat4.str=function(a){return"["+a[0]+", "+a[1]+", "+a[2]+", "+a[3]+"]"};
 				if (this.canvas && this.canvas.toDataURL)
 				{
 					this.snapshotData = this.canvas.toDataURL(this.snapshotCanvas[0], this.snapshotCanvas[1]);
+					if (window["cr_onSnapshot"])
+						window["cr_onSnapshot"](this.snapshotData);
 					this.trigger(cr.system_object.prototype.cnds.OnCanvasSnapshot, null);
 				}
 				this.snapshotCanvas = null;
@@ -4645,6 +4677,7 @@ quat4.str=function(a){return"["+a[0]+", "+a[1]+", "+a[2]+", "+a[3]+"]"};
 		}
 		if (prev_layout == changeToLayout)
 			this.system.waits.length = 0;
+		this.registered_collisions.length = 0;
 		changeToLayout.startRunning();
 		for (i = 0, len = this.types_by_index.length; i < len; i++)
 		{
@@ -6229,6 +6262,11 @@ quat4.str=function(a){return"["+a[0]+", "+a[1]+", "+a[2]+", "+a[3]+"]"};
 		}
 		return null;
 	};
+	Runtime.prototype.doCanvasSnapshot = function (format_, quality_)
+	{
+		this.snapshotCanvas = [format_, quality_];
+		this.redraw = true;		// force redraw so snapshot is always taken
+	};
 	function makeSaveDb(e)
 	{
 		var db = e.target.result;
@@ -6383,8 +6421,14 @@ quat4.str=function(a){return"["+a[0]+", "+a[1]+", "+a[2]+", "+a[3]+"]"};
 			}
 			else
 			{
-				this.loadFromJson = localStorage.getItem("__c2save_" + loadingFromSlot) || "";
-				cr.logexport("Loaded state from WebStorage (" + this.loadFromJson.length + " bytes)");
+				try {
+					this.loadFromJson = localStorage.getItem("__c2save_" + loadingFromSlot) || "";
+					cr.logexport("Loaded state from WebStorage (" + this.loadFromJson.length + " bytes)");
+				}
+				catch (e)
+				{
+					this.loadFromJson = "";
+				}
 				this.suspendDrawing = false;
 				if (!self.loadFromJson.length)
 					self.trigger(cr.system_object.prototype.cnds.OnLoadFailed, null);
@@ -6808,7 +6852,8 @@ quat4.str=function(a){return"["+a[0]+", "+a[1]+", "+a[2]+", "+a[3]+"]"};
 				else
 				{
 					inst.layer = oldlayer;
-					this.DestroyInstance(inst);
+					if (!state_only)
+						this.DestroyInstance(inst);
 				}
 			}
 			inst.x = world["x"];
@@ -6901,6 +6946,12 @@ window["cr_getC2Runtime"] = function()
 		return window["c2runtime"];
 	else
 		return null;
+}
+window["cr_getSnapshot"] = function (format_, quality_)
+{
+	var runtime = window["cr_getC2Runtime"]();
+	if (runtime)
+		runtime.doCanvasSnapshot(format_, quality_);
 }
 window["cr_sizeCanvas"] = function(w, h)
 {
@@ -7175,7 +7226,12 @@ window["cr_setSuspended"] = function(s)
 			initial_inst = this.initial_nonworld[i];
 			type = this.runtime.types_by_index[initial_inst[1]];
 			if (type.global)
-				inst = this.runtime.createInstanceFromInit(initial_inst, null, true);
+			{
+				if (!type.is_contained)
+				{
+					inst = this.runtime.createInstanceFromInit(initial_inst, null, true);
+				}
+			}
 			else
 			{
 				this.initial_nonworld[k] = initial_inst;
@@ -8824,10 +8880,10 @@ window["cr_setSuspended"] = function(s)
 	};
 	EventSheet.prototype.updateDeepIncludes = function ()
 	{
-		this.deep_includes.length = 0;
-		this.already_included_sheets.length = 0;
+		cr.clearArray(this.deep_includes);
+		cr.clearArray(this.already_included_sheets);
 		this.addDeepIncludes(this);
-		this.already_included_sheets.length = 0;
+		cr.clearArray(this.already_included_sheets);
 	};
 	EventSheet.prototype.addDeepIncludes = function (root_sheet)
 	{
@@ -9004,7 +9060,7 @@ window["cr_setSuspended"] = function(s)
 		{
 			if (this.select_all)
 			{
-				this.instances.length = 0;
+				cr.clearArray(this.instances);
 				cr.shallowAssignArray(this.else_instances, inst.type.instances);
 				this.select_all = false;
 			}
@@ -9018,7 +9074,7 @@ window["cr_setSuspended"] = function(s)
 		else
 		{
 			this.select_all = false;
-			this.instances.length = 1;
+			cr.clearArray(this.instances);
 			this.instances[0] = inst;
 		}
 	};
@@ -9201,7 +9257,7 @@ window["cr_setSuspended"] = function(s)
 	};
 	EventBlock.prototype.run = function ()
 	{
-		var i, len, any_true = false, cnd_result;
+		var i, len, c, any_true = false, cnd_result;
 		var runtime = this.runtime;
 		var evinfo = this.runtime.getCurrentEventStack();
 		evinfo.current_event = this;
@@ -9215,9 +9271,10 @@ window["cr_setSuspended"] = function(s)
 				evinfo.cndindex = 0
 			for (len = conditions.length; evinfo.cndindex < len; evinfo.cndindex++)
 			{
-				if (conditions[evinfo.cndindex].trigger)		// skip triggers when running OR block
+				c = conditions[evinfo.cndindex];
+				if (c.trigger)		// skip triggers when running OR block
 					continue;
-				cnd_result = conditions[evinfo.cndindex].run();
+				cnd_result = c.run();
 				if (cnd_result)			// make sure all conditions run and run if any were true
 					any_true = true;
 			}
@@ -9499,8 +9556,8 @@ window["cr_setSuspended"] = function(s)
 				results[j] = parameters[j].get(0);
 		}
 		if (sol.select_all) {
-			sol.instances.length = 0;       // clear contents
-			sol.else_instances.length = 0;
+			cr.clearArray(sol.instances);       // clear contents
+			cr.clearArray(sol.else_instances);
 			arr = type.instances;
 			for (i = 0, leni = arr.length; i < leni; ++i)
 			{
@@ -9625,7 +9682,7 @@ window["cr_setSuspended"] = function(s)
 					}
 				}
 			}
-			arr.length = k;
+			cr.truncateArray(arr, k);
 			if (is_contained)
 			{
 				container = type.container;
@@ -9633,9 +9690,9 @@ window["cr_setSuspended"] = function(s)
 				{
 					sol2 = container[i].getCurrentSol();
 					if (using_else_instances)
-						sol2.else_instances.length = k;
+						cr.truncateArray(sol2.else_instances, k);
 					else
-						sol2.instances.length = k;
+						cr.truncateArray(sol2.instances, k);
 				}
 			}
 			var pick_in_finish = any_true;		// don't pick in finish() if we're only doing the logic test below
@@ -10169,7 +10226,7 @@ window["cr_setSuspended"] = function(s)
 		this.current_event = cur_event;
 		this.cndindex = 0;
 		this.actindex = 0;
-		this.temp_parents_arr.length = 0;
+		cr.clearArray(this.temp_parents_arr);
 		this.last_event_true = false;
 		this.else_branch_ran = false;
 		this.any_true_state = false;
@@ -10645,33 +10702,40 @@ window["cr_setSuspended"] = function(s)
 	};
 	ExpNode.prototype.eval_and = function (ret)
 	{
-		this.first.get(ret);                // left operand
+		this.first.get(ret);			// left operand
 		var temp = pushTempValue();
 		this.second.get(temp);			// right operand
-		if (ret.is_number())
-		{
-			if (temp.is_string())
-			{
-				ret.set_string(ret.data.toString() + temp.data);
-			}
-			else
-			{
-				if (ret.data && temp.data)
-					ret.set_int(1);
-				else
-					ret.set_int(0);
-			}
-		}
-		else if (ret.is_string())
-		{
-			if (temp.is_string())
-				ret.data += temp.data;
-			else
-			{
-				ret.data += (Math.round(temp.data * 1e10) / 1e10).toString();
-			}
-		}
+		if (temp.is_string() || ret.is_string())
+			this.eval_and_stringconcat(ret, temp);
+		else
+			this.eval_and_logical(ret, temp);
 		popTempValue();
+	};
+	ExpNode.prototype.eval_and_stringconcat = function (ret, temp)
+	{
+		if (ret.is_string() && temp.is_string())
+			this.eval_and_stringconcat_str_str(ret, temp);
+		else
+			this.eval_and_stringconcat_num(ret, temp);
+	};
+	ExpNode.prototype.eval_and_stringconcat_str_str = function (ret, temp)
+	{
+		ret.data += temp.data;
+	};
+	ExpNode.prototype.eval_and_stringconcat_num = function (ret, temp)
+	{
+		if (ret.is_string())
+		{
+			ret.data += (Math.round(temp.data * 1e10) / 1e10).toString();
+		}
+		else
+		{
+			ret.set_string(ret.data.toString() + temp.data);
+		}
+	};
+	ExpNode.prototype.eval_and_logical = function (ret, temp)
+	{
+		ret.set_int(ret.data && temp.data ? 1 : 0);
 	};
 	ExpNode.prototype.eval_or = function (ret)
 	{
@@ -10902,7 +10966,7 @@ cr.system_object.prototype.loadFromJSON = function (o)
 {
 	var owaits = o["waits"];
 	var i, len, j, lenj, p, w, addWait, e, aindex, t, savedsol, nusol, inst;
-	this.waits.length = 0;
+	cr.clearArray(this.waits);
 	for (i = 0, len = owaits.length; i < len; i++)
 	{
 		w = owaits[i];
@@ -11151,7 +11215,7 @@ cr.system_object.prototype.loadFromJSON = function (o)
 				inst = instances[i];
 				sol = obj.getCurrentSol();
 				sol.select_all = false;
-				sol.instances.length = 1;
+				cr.clearArray(sol.instances);
 				sol.instances[0] = inst;
 				if (is_contained)
 				{
@@ -11160,7 +11224,7 @@ cr.system_object.prototype.loadFromJSON = function (o)
 						s = inst.siblings[j];
 						sol2 = s.type.getCurrentSol();
 						sol2.select_all = false;
-						sol2.instances.length = 1;
+						cr.clearArray(sol2.instances);
 						sol2.instances[0] = s;
 					}
 				}
@@ -11172,7 +11236,7 @@ cr.system_object.prototype.loadFromJSON = function (o)
 		else
 		{
 			sol.select_all = false;
-			sol.instances.length = 1;
+			cr.clearArray(sol.instances);
 			for (i = 0, len = instances.length; i < len && !current_loop.stopped; i++)
 			{
 				inst = instances[i];
@@ -11184,7 +11248,7 @@ cr.system_object.prototype.loadFromJSON = function (o)
 						s = inst.siblings[j];
 						sol2 = s.type.getCurrentSol();
 						sol2.select_all = false;
-						sol2.instances.length = 1;
+						cr.clearArray(sol2.instances);
 						sol2.instances[0] = s;
 					}
 				}
@@ -11192,7 +11256,7 @@ cr.system_object.prototype.loadFromJSON = function (o)
 				current_event.retrigger();
 			}
 		}
-		instances.length = 0;
+		cr.clearArray(instances);
         this.runtime.popLoopStack();
 		foreach_instanceptr--;
 		return false;
@@ -11245,7 +11309,7 @@ cr.system_object.prototype.loadFromJSON = function (o)
 				inst = instances[i];
 				sol = obj.getCurrentSol();
 				sol.select_all = false;
-				sol.instances.length = 1;
+				cr.clearArray(sol.instances);
 				sol.instances[0] = inst;
 				if (is_contained)
 				{
@@ -11254,7 +11318,7 @@ cr.system_object.prototype.loadFromJSON = function (o)
 						s = inst.siblings[j];
 						sol2 = s.type.getCurrentSol();
 						sol2.select_all = false;
-						sol2.instances.length = 1;
+						cr.clearArray(sol2.instances);
 						sol2.instances[0] = s;
 					}
 				}
@@ -11266,7 +11330,7 @@ cr.system_object.prototype.loadFromJSON = function (o)
 		else
 		{
 			sol.select_all = false;
-			sol.instances.length = 1;
+			cr.clearArray(sol.instances);
 			for (i = 0, len = instances.length; i < len && !current_loop.stopped; i++)
 			{
 				inst = instances[i];
@@ -11278,7 +11342,7 @@ cr.system_object.prototype.loadFromJSON = function (o)
 						s = inst.siblings[j];
 						sol2 = s.type.getCurrentSol();
 						sol2.select_all = false;
-						sol2.instances.length = 1;
+						cr.clearArray(sol2.instances);
 						sol2.instances[0] = s;
 					}
 				}
@@ -11286,7 +11350,7 @@ cr.system_object.prototype.loadFromJSON = function (o)
 				current_event.retrigger();
 			}
 		}
-		instances.length = 0;
+		cr.clearArray(instances);
         this.runtime.popLoopStack();
 		foreach_instanceptr--;
 		return false;
@@ -11303,7 +11367,7 @@ cr.system_object.prototype.loadFromJSON = function (o)
 		var sol = obj_.getCurrentSol();
 		cr.shallowAssignArray(tmp_instances, sol.getObjects());
 		if (sol.select_all)
-			sol.else_instances.length = 0;
+			cr.clearArray(sol.else_instances);
 		var current_condition = this.runtime.getCurrentCondition();
 		for (i = 0, k = 0, len = tmp_instances.length; i < len; i++)
 		{
@@ -11320,10 +11384,10 @@ cr.system_object.prototype.loadFromJSON = function (o)
 				sol.else_instances.push(inst);
 			}
 		}
-		tmp_instances.length = k;
+		cr.truncateArray(tmp_instances, k);
 		sol.select_all = false;
 		cr.shallowAssignArray(sol.instances, tmp_instances);
-		tmp_instances.length = 0;
+		cr.clearArray(tmp_instances);
 		foreach_instanceptr--;
 		obj_.applySolToContainer();
 		return !!sol.instances.length;
@@ -11340,7 +11404,7 @@ cr.system_object.prototype.loadFromJSON = function (o)
 		var sol = obj_.getCurrentSol();
 		cr.shallowAssignArray(tmp_instances, sol.getObjects());
 		if (sol.select_all)
-			sol.else_instances.length = 0;
+			cr.clearArray(sol.else_instances);
 		var current_condition = this.runtime.getCurrentCondition();
 		for (i = 0, k = 0, len = tmp_instances.length; i < len; i++)
 		{
@@ -11356,10 +11420,10 @@ cr.system_object.prototype.loadFromJSON = function (o)
 				sol.else_instances.push(inst);
 			}
 		}
-		tmp_instances.length = k;
+		cr.truncateArray(tmp_instances, k);
 		sol.select_all = false;
 		cr.shallowAssignArray(sol.instances, tmp_instances);
-		tmp_instances.length = 0;
+		cr.clearArray(tmp_instances);
 		foreach_instanceptr--;
 		obj_.applySolToContainer();
 		return !!sol.instances.length;
@@ -11603,21 +11667,21 @@ cr.system_object.prototype.loadFromJSON = function (o)
 		if (sol.select_all)
 		{
 			cr.shallowAssignArray(tmp_arr, instances);
-			sol.else_instances.length = 0;
+			cr.clearArray(sol.else_instances);
 			sol.select_all = false;
-			sol.instances.length = 0;
+			cr.clearArray(sol.instances);
 		}
 		else
 		{
 			if (orblock)
 			{
 				cr.shallowAssignArray(tmp_arr, sol.else_instances);
-				sol.else_instances.length = 0;
+				cr.clearArray(sol.else_instances);
 			}
 			else
 			{
 				cr.shallowAssignArray(tmp_arr, instances);
-				sol.instances.length = 0;
+				cr.clearArray(sol.instances);
 			}
 		}
 		for (i = 0, len = tmp_arr.length; i < len; ++i)
@@ -11710,7 +11774,7 @@ cr.system_object.prototype.loadFromJSON = function (o)
 		this.runtime.isInOnDestroy--;
         var sol = obj.getCurrentSol();
         sol.select_all = false;
-		sol.instances.length = 1;
+		cr.clearArray(sol.instances);
 		sol.instances[0] = inst;
 		if (inst.is_contained)
 		{
@@ -11719,7 +11783,7 @@ cr.system_object.prototype.loadFromJSON = function (o)
 				s = inst.siblings[i];
 				sol = s.type.getCurrentSol();
 				sol.select_all = false;
-				sol.instances.length = 1;
+				cr.clearArray(sol.instances);
 				sol.instances[0] = s;
 			}
 		}
@@ -11752,6 +11816,17 @@ cr.system_object.prototype.loadFromJSON = function (o)
 		if (layer.zoomRate !== sr)
 		{
 			layer.zoomRate = sr;
+			this.runtime.redraw = true;
+		}
+	};
+	SysActs.prototype.SetLayerForceOwnTexture = function (layer, f)
+	{
+		if (!layer)
+			return;
+		f = !!f;
+		if (layer.forceOwnTexture !== f)
+		{
+			layer.forceOwnTexture = f;
 			this.runtime.redraw = true;
 		}
 	};
@@ -11894,7 +11969,7 @@ cr.system_object.prototype.loadFromJSON = function (o)
 	function freeWaitObject(w)
 	{
 		cr.wipe(w.sols);
-		w.solModifiers.length = 0;
+		cr.clearArray(w.solModifiers);
 		waitobjrecycle.push(w);
 	};
 	var solstateobjects = [];
@@ -11913,7 +11988,7 @@ cr.system_object.prototype.loadFromJSON = function (o)
 	};
 	function freeSolStateObject(s)
 	{
-		s.insts.length = 0;
+		cr.clearArray(s.insts);
 		solstateobjects.push(s);
 	};
 	SysActs.prototype.Wait = function (seconds)
@@ -12118,8 +12193,7 @@ cr.system_object.prototype.loadFromJSON = function (o)
 	};
 	SysActs.prototype.SnapshotCanvas = function (format_, quality_)
 	{
-		this.runtime.snapshotCanvas = [format_ === 0 ? "image/png" : "image/jpeg", quality_ / 100];
-		this.runtime.redraw = true;		// force redraw so snapshot is always taken
+		this.runtime.doCanvasSnapshot(format_ === 0 ? "image/png" : "image/jpeg", quality_ / 100);
 	};
 	SysActs.prototype.SetCanvasSize = function (w, h)
 	{
@@ -12641,6 +12715,10 @@ cr.system_object.prototype.loadFromJSON = function (o)
 	{
 		ret.set_string(this.runtime.gl ? "webgl" : "canvas2d");
 	};
+	SysExps.prototype.rendererdetail = function (ret)
+	{
+		ret.set_string(this.runtime.glUnmaskedRenderer);
+	};
 	SysExps.prototype.anglediff = function (ret, a, b)
 	{
 		ret.set_float(cr.to_degrees(cr.angleDiff(cr.to_radians(a), cr.to_radians(b))));
@@ -12883,7 +12961,7 @@ cr.system_object.prototype.loadFromJSON = function (o)
 			else
 				j++;
 		}
-		this.waits.length = j;
+		cr.truncateArray(this.waits, j);
 	};
 }());
 ;
@@ -13232,8 +13310,8 @@ cr.system_object.prototype.loadFromJSON = function (o)
 					if (sol.select_all)
 					{
 						sol.select_all = false;
-						sol.instances.length = 0;
-						sol.else_instances.length = 0;
+						cr.clearArray(sol.instances);
+						cr.clearArray(sol.else_instances);
 						instances = this.instances;
 						for (i = 0, len = instances.length; i < len; i++)
 						{
@@ -13259,7 +13337,7 @@ cr.system_object.prototype.loadFromJSON = function (o)
 							else
 								j++;
 						}
-						sol.instances.length = j;
+						cr.truncateArray(sol.instances, j);
 						this.applySolToContainer();
 						return !!sol.instances.length;
 					}
@@ -13707,7 +13785,7 @@ cr.system_object.prototype.loadFromJSON = function (o)
 	};
 	cr.inst_updateActiveEffects = function ()
 	{
-		this.active_effect_types.length = 0;
+		cr.clearArray(this.active_effect_types);
 		var i, len, et, inst;
 		for (i = 0, len = this.active_effect_flags.length; i < len; i++)
 		{
@@ -13881,13 +13959,13 @@ cr.system_object.prototype.loadFromJSON = function (o)
 			sol2.select_all = select_all;
 			if (!select_all)
 			{
-				sol2.instances.length = sol.instances.length;
-				for (j = 0, lenj = sol.instances.length; j < lenj; j++)
+				cr.clearArray(sol2.instances);
+				for (j = 0, lenj = sol.instances.length; j < lenj; ++j)
 					sol2.instances[j] = t.getInstanceByIID(sol.instances[j].iid);
 				if (orblock)
 				{
-					sol2.else_instances.length = sol.else_instances.length;
-					for (j = 0, lenj = sol.else_instances.length; j < lenj; j++)
+					cr.clearArray(sol2.else_instances);
+					for (j = 0, lenj = sol.else_instances.length; j < lenj; ++j)
 						sol2.else_instances[j] = t.getInstanceByIID(sol.else_instances[j].iid);
 				}
 			}
@@ -15082,8 +15160,6 @@ cr.plugins_.Mouse = function(runtime)
 	{
 		if (!this.mouseInGame())
 			return;
-		if (this.runtime.had_a_click && !this.runtime.isMobile)
-			info.preventDefault();
 		this.buttonMap[info.which] = true;
 		this.runtime.isInUserInputEvent = true;
 		this.runtime.trigger(cr.plugins_.Mouse.prototype.cnds.OnAnyClick, this);
@@ -15166,9 +15242,13 @@ cr.plugins_.Mouse = function(runtime)
 	};
 	pluginProto.cnds = new Cnds();
 	function Acts() {};
+	var lastSetCursor = null;
 	Acts.prototype.SetCursor = function (c)
 	{
 		var cursor_style = ["auto", "pointer", "text", "crosshair", "move", "help", "wait", "none"][c];
+		if (lastSetCursor === cursor_style)
+			return;		// redundant
+		lastSetCursor = cursor_style;
 		if (this.runtime.canvas && this.runtime.canvas.style)
 			this.runtime.canvas.style.cursor = cursor_style;
 	};
@@ -15180,6 +15260,9 @@ cr.plugins_.Mouse = function(runtime)
 		if (!inst || !inst.curFrame)
 			return;
 		var frame = inst.curFrame;
+		if (lastSetCursor === frame)
+			return;		// already set this frame
+		lastSetCursor = frame;
 		var datauri = frame.getDataUri();
 		var cursor_style = "url(" + datauri + ") " + Math.round(frame.hotspotX * frame.width) + " " + Math.round(frame.hotspotY * frame.height) + ", auto";
 		jQuery(this.runtime.canvas).css("cursor", cursor_style);
@@ -15427,7 +15510,7 @@ cr.plugins_.Sprite = function(runtime)
 	typeProto.preloadCanvas2D = function (ctx)
 	{
 		var i, len, frameimg;
-		already_drawn_images.length = 0;
+		cr.clearArray(already_drawn_images);
 		for (i = 0, len = this.all_frames.length; i < len; ++i)
 		{
 			frameimg = this.all_frames[i].texture_img;
@@ -15831,6 +15914,10 @@ cr.plugins_.Sprite = function(runtime)
 		}
 		*/
 	};
+	instanceProto.drawGL_earlyZPass = function(glw)
+	{
+		this.drawGL(glw);
+	};
 	instanceProto.drawGL = function(glw)
 	{
 		glw.setTexture(this.curWebGLTexture);
@@ -15977,16 +16064,19 @@ cr.plugins_.Sprite = function(runtime)
 		var runtime = this.runtime;
 		var cnd = runtime.getCurrentCondition();
 		var ltype = cnd.type;
-		if (!cnd.extra["collmemory"])
+		var collmemory = null;
+		if (cnd.extra["collmemory"])
 		{
-			cnd.extra["collmemory"] = {};
-			runtime.addDestroyCallback((function (collmemory) {
-				return function(inst) {
-					collmemory_removeInstance(collmemory, inst);
-				};
-			})(cnd.extra["collmemory"]));
+			collmemory = cnd.extra["collmemory"];
 		}
-		var collmemory = cnd.extra["collmemory"];
+		else
+		{
+			collmemory = {};
+			cnd.extra["collmemory"] = collmemory;
+			runtime.addDestroyCallback(function(inst) {
+				collmemory_removeInstance(cnd.extra["collmemory"], inst);
+			});
+		}
 		var lsol = ltype.getCurrentSol();
 		var rsol = rtype.getCurrentSol();
 		var linstances = lsol.getObjects();
@@ -16049,7 +16139,7 @@ cr.plugins_.Sprite = function(runtime)
 					collmemory_remove(collmemory, linst, rinst);
 				}
 			}
-			candidates1.length = 0;
+			cr.clearArray(candidates1);
 		}
 		return false;
 	};
@@ -16110,7 +16200,7 @@ cr.plugins_.Sprite = function(runtime)
 			this.y = oldy;
 			this.set_bbox_changed();
 		}
-		candidates2.length = 0;
+		cr.clearArray(candidates2);
 		return ret;
 	};
 	typeProto.finish = function (do_pick)
@@ -16126,15 +16216,15 @@ cr.plugins_.Sprite = function(runtime)
 			if (sol.select_all)
 			{
 				sol.select_all = false;
-				sol.instances.length = topick.length;
-				for (i = 0, len = topick.length; i < len; i++)
+				cr.clearArray(sol.instances);
+				for (i = 0, len = topick.length; i < len; ++i)
 				{
 					sol.instances[i] = topick[i];
 				}
 				if (orblock)
 				{
-					sol.else_instances.length = 0;
-					for (i = 0, len = rpicktype.instances.length; i < len; i++)
+					cr.clearArray(sol.else_instances);
+					for (i = 0, len = rpicktype.instances.length; i < len; ++i)
 					{
 						inst = rpicktype.instances[i];
 						if (!rtopick.contains(inst))
@@ -16147,8 +16237,7 @@ cr.plugins_.Sprite = function(runtime)
 				if (orblock)
 				{
 					var initsize = sol.instances.length;
-					sol.instances.length = initsize + topick.length;
-					for (i = 0, len = topick.length; i < len; i++)
+					for (i = 0, len = topick.length; i < len; ++i)
 					{
 						sol.instances[initsize + i] = topick[i];
 						cr.arrayFindRemove(sol.else_instances, topick[i]);
@@ -16256,7 +16345,7 @@ cr.plugins_.Sprite = function(runtime)
 			sol.select_all = false;
 			if (reset_sol)
 			{
-				sol.instances.length = 1;
+				cr.clearArray(sol.instances);
 				sol.instances[0] = inst;
 			}
 			else
@@ -16270,7 +16359,7 @@ cr.plugins_.Sprite = function(runtime)
 					sol.select_all = false;
 					if (reset_sol)
 					{
-						sol.instances.length = 1;
+						cr.clearArray(sol.instances);
 						sol.instances[0] = s;
 					}
 					else
@@ -16281,6 +16370,7 @@ cr.plugins_.Sprite = function(runtime)
 	};
 	Acts.prototype.SetEffect = function (effect)
 	{
+		this.blend_mode = effect;
 		this.compositeOp = cr.effectToCompositeOp(effect);
 		cr.setGLBlend(this, effect, this.runtime.gl);
 		this.runtime.redraw = true;
@@ -16379,6 +16469,12 @@ cr.plugins_.Sprite = function(runtime)
 			{
 				if (self.runtime.glwrap && self.curFrame === curFrame_)
 					self.curWebGLTexture = curFrame_.webGL_texture;
+				if (resize_ === 0)		// resize to image size
+				{
+					self.width = img.width;
+					self.height = img.height;
+					self.set_bbox_changed();
+				}
 				self.runtime.redraw = true;
 				self.runtime.trigger(cr.plugins_.Sprite.prototype.cnds.OnURLLoaded, self);
 				return;
@@ -16515,7 +16611,7 @@ cr.plugins_.Text = function(runtime)
 		this.type = type;
 		this.runtime = type.runtime;
 		if (this.recycled)
-			this.lines.length = 0;
+			cr.clearArray(this.lines);
 		else
 			this.lines = [];		// for word wrapping
 		this.text_changed = true;
@@ -16803,7 +16899,7 @@ cr.plugins_.Text = function(runtime)
 	var wordsCache = [];
 	pluginProto.TokeniseWords = function (text)
 	{
-		wordsCache.length = 0;
+		cr.clearArray(wordsCache);
 		var cur_word = "";
 		var ch;
 		var i = 0;
@@ -16858,7 +16954,7 @@ cr.plugins_.Text = function(runtime)
 		{
 			freeLine(arr[i]);
 		}
-		arr.length = 0;
+		cr.clearArray(arr);
 	};
 	pluginProto.WordWrap = function (text, lines, ctx, width, wrapbyword)
 	{
@@ -17053,6 +17149,7 @@ cr.plugins_.Text = function(runtime)
 	};
 	Acts.prototype.SetEffect = function (effect)
 	{
+		this.blend_mode = effect;
 		this.compositeOp = cr.effectToCompositeOp(effect);
 		cr.setGLBlend(this, effect, this.runtime.gl);
 		this.runtime.redraw = true;
@@ -17649,8 +17746,6 @@ cr.plugins_.Touch = function(runtime)
 	var noop_func = function(){};
 	instanceProto.onMouseDown = function(info)
 	{
-		if (info.preventDefault && this.runtime.had_a_click && !this.runtime.isMobile)
-			info.preventDefault();
 		var t = { pageX: info.pageX, pageY: info.pageY, "identifier": 0 };
 		var fakeinfo = { changedTouches: [t] };
 		this.onTouchStart(fakeinfo);
@@ -17735,7 +17830,7 @@ cr.plugins_.Touch = function(runtime)
 			sol.select_all = false;
 			cr.shallowAssignArray(sol.instances, touching);
 			type.applySolToContainer();
-			touching.length = 0;
+			cr.clearArray(touching);
 			return true;
 		}
 		else
