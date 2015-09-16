@@ -1,6 +1,6 @@
 ﻿{
-	"name": "Plugins For Cordova",
-	"short_name": "Plugins For Cordova",
+	"name": "Cordova Plugins",
+	"short_name": "Cordova Plugins",
 	"start_url": "index.html",
 	"display": "fullscreen",
 	"orientation": "any",
