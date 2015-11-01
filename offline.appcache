@@ -1,5 +1,5 @@
 ﻿CACHE MANIFEST
-#1442552621
+#1446359769
 data.js
 c2runtime.js
 jquery-2.1.1.min.js
@@ -16,7 +16,6 @@ images/googlepluscommunityconstruct-sheet0.png
 images/googlepluscommunitycordova-sheet0.png
 images/cordovafacebook-sheet0.png
 images/phonegapgame-sheet0.png
-images/phonegapiap-sheet0.png
 images/platformandroid-sheet0.png
 images/platformios-sheet0.png
 images/youtubelink-sheet0.png
@@ -45,6 +44,7 @@ images/phonegapleadbolt-sheet0.png
 images/platformwindowsphone-sheet0.png
 images/cordovaiad-sheet0.png
 images/cordovaparsepushnotification-sheet0.png
+images/cordovaiap-sheet0.png
 icon-16.png
 icon-32.png
 icon-114.png
